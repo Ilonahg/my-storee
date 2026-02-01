@@ -1,4 +1,5 @@
- 
+const API = "https://my-storee.onrender.com";
+
 /* =====================================================
    BLOCK 1: ANNOUNCEMENT BAR
 ===================================================== */
@@ -852,7 +853,7 @@ document.addEventListener("DOMContentLoaded", () => {
         authMessage.textContent = "Sending code...";
 
         try {
-            const res = await fetch("http://localhost:3001/send-code", {
+            const res = await fetch("${API}/send-code", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include", // ✅ FIX
@@ -886,7 +887,7 @@ document.addEventListener("DOMContentLoaded", () => {
         codeMsg.textContent = "Verifying...";
 
         try {
-            const res = await fetch("http://localhost:3001/verify-code", {
+            const res = await fetch(`${API}/verify-code`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
@@ -1152,7 +1153,7 @@ window.addEventListener("popstate", e => {
 
   async function loadAccountUser() {
     try {
-      const res = await fetch("http://localhost:3001/me", {
+      const res = await fetch(`${API}/me`, {
         credentials: "include"
       });
       const data = await res.json();
@@ -1176,7 +1177,7 @@ async function loadOrders() {
   if (!ordersView) return;
 
   try {
-    const res = await fetch("http://localhost:3001/orders", {
+    const res = await fetch(`${API}/orders`, {
       credentials: "include"
     });
 
@@ -1393,7 +1394,7 @@ window.saveAddress = function () {
   if (logoutAllBtn) {
     logoutAllBtn.onclick = async () => {
       try {
-        await fetch("http://localhost:3001/logout", {
+        await fetch("${API}/logout", {
           method: "POST",
           credentials: "include"
         });
@@ -1851,7 +1852,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 
     try {
-      const res = await fetch("http://localhost:3001/create-payment", {
+      const res = await fetch("${API}/create-payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include", // 🔥 щоб передався auth_token cookie
@@ -2082,7 +2083,7 @@ if (contactForm) {
     };
 
     try {
-      const response = await fetch("http://localhost:3001/contact", {
+      const response = await fetch(`${API}/contact`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
