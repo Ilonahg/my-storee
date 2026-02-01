@@ -814,7 +814,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function isLoggedIn() {
         try {
-            const res = await fetch("http://localhost:3001/me", {
+            const res = await fetch(`${API}/me`, {
                 credentials: "include"
             });
             const data = await res.json();
@@ -853,7 +853,8 @@ document.addEventListener("DOMContentLoaded", () => {
         authMessage.textContent = "Sending code...";
 
         try {
-            const res = await fetch("${API}/send-code", {
+            const res = await fetch(`${API}/send-code`, {
+
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include", // ✅ FIX
@@ -1394,7 +1395,8 @@ window.saveAddress = function () {
   if (logoutAllBtn) {
     logoutAllBtn.onclick = async () => {
       try {
-        await fetch("${API}/logout", {
+        await fetch(`${API}/logout`, {
+
           method: "POST",
           credentials: "include"
         });
@@ -1457,7 +1459,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
       try {
-        await fetch("http://localhost:3001/logout", {
+        await fetch(`${API}/logout`, {
           method: "POST",
           credentials: "include"
         });
@@ -1852,7 +1854,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
 
     try {
-      const res = await fetch("${API}/create-payment", {
+      const res = await fetch(`${API}/create-payment`, {
+
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include", // 🔥 щоб передався auth_token cookie
