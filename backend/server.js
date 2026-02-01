@@ -3,7 +3,8 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
+const resend = new Resend(process.env.RESEND_API_KEY);
 const mysql = require("mysql2");
 const path = require("path");
 const fs = require("fs");
@@ -63,17 +64,7 @@ if (process.env.MYSQL_URL) {
     });
 }
 
-/* =====================================================
-   EMAIL (GMAIL)
-===================================================== */
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    }
-});
-
+ 
 /* =====================================================
    OTP STORE
 ===================================================== */
@@ -104,7 +95,7 @@ app.get("/", (req, res) => {
 });
 
 /* =====================================================
-   SEND EMAIL CODE
+   SEND EMAIL CODE (RESEND API — WORKS ON RENDER)
 ===================================================== */
 app.post("/send-code", async (req, res) => {
     try {
@@ -123,11 +114,19 @@ app.post("/send-code", async (req, res) => {
             expiresAt: Date.now() + 5 * 60 * 1000
         });
 
-        await transporter.sendMail({
-            from: `"La Mia Rosa" <gogilchyn2005ilona@gmail.com>`,
+        await resend.emails.send({
+            from: "La Mia Rosa <onboarding@resend.dev>",
             to: email,
             subject: "Your login code",
-            html: `<h2>Your code: ${code}</h2>`
+            html: `
+                <div style="font-family:Arial;padding:20px">
+                    <h2>Your login code</h2>
+                    <p style="font-size:28px;font-weight:bold;letter-spacing:4px;">
+                        ${code}
+                    </p>
+                    <p>This code expires in 5 minutes.</p>
+                </div>
+            `
         });
 
         res.json({ ok: true });
@@ -376,7 +375,7 @@ app.post("/create-payment", async (req, res) => {
     if (token) {
         try {
             const payload = jwt.verify(token, JWT_SECRET);
-            userId = payload.userId; // ← ТУТ ID
+            userId = payload.userId;
         } catch {}
     }
 
@@ -388,7 +387,7 @@ app.post("/create-payment", async (req, res) => {
         VALUES (?, ?, ?, ?)
         `,
         [
-            userId, // ✅ ТЕПЕР НЕ NULL
+            userId,
             JSON.stringify(cart),
             numericTotal,
             "paid"
@@ -401,17 +400,16 @@ app.post("/create-payment", async (req, res) => {
             }
 
             try {
-                const { html, attachments } = orderEmailTemplate({
+                const { html } = orderEmailTemplate({
                     items: cart,
                     total: numericTotal.toFixed(2)
                 });
 
-                await transporter.sendMail({
-                    from: `"La Mia Rosa" <gogilchyn2005ilona@gmail.com>`,
+                await resend.emails.send({
+                    from: "La Mia Rosa <onboarding@resend.dev>",
                     to: email,
                     subject: "Order confirmation – La Mia Rosa",
-                    html,
-                    attachments
+                    html: html
                 });
 
             } catch (mailErr) {
@@ -423,39 +421,37 @@ app.post("/create-payment", async (req, res) => {
     );
 });
 
-
 /* =====================================================
-   TEST EMAIL (WITH PRODUCT IMAGE)
+   TEST EMAIL
 ===================================================== */
 app.get("/test-email", async (req, res) => {
-  try {
+    try {
 
-    const emailHtml = orderEmailTemplate({
-      items: [
-        {
-          title: "Side-Zip Turtleneck Sweater",
-          price: 1249.90,
-          qty: 1,
-          image: "black-zip-cardigan-1.jpg"
-        }
-      ],
-      total: "1249.90"
-    });
+        const { html } = orderEmailTemplate({
+            items: [
+                {
+                    title: "Side-Zip Turtleneck Sweater",
+                    price: 1249.90,
+                    qty: 1,
+                    image: "black-zip-cardigan-1.jpg"
+                }
+            ],
+            total: "1249.90"
+        });
 
-    await transporter.sendMail({
-      from: `"La Mia Rosa" <gogilchyn2005ilona@gmail.com>`,
-      to: "gogilchyn2005ilona@gmail.com",
-      subject: "TEST ORDER EMAIL – La Mia Rosa",
-      html: emailHtml.html,
-      attachments: emailHtml.attachments
-    });
+        await resend.emails.send({
+            from: "La Mia Rosa <onboarding@resend.dev>",
+            to: "gogilchyn2005ilona@gmail.com",
+            subject: "TEST ORDER EMAIL – La Mia Rosa",
+            html: html
+        });
 
-    res.json({ ok: true });
+        res.json({ ok: true });
 
-  } catch (err) {
-    console.error("TEST EMAIL ERROR:", err);
-    res.status(500).json({ error: "Email failed" });
-  }
+    } catch (err) {
+        console.error("TEST EMAIL ERROR:", err);
+        res.status(500).json({ error: "Email failed" });
+    }
 });
 
 /* =====================================================
@@ -482,8 +478,8 @@ app.post("/contact", async (req, res) => {
             }
 
             try {
-                await transporter.sendMail({
-                    from: `"La Mia Rosa" <gogilchyn2005ilona@gmail.com>`,
+                await resend.emails.send({
+                    from: "La Mia Rosa <onboarding@resend.dev>",
                     to: "gogilchyn2005ilona@gmail.com",
                     subject: "New message from Communication page",
                     html: `
@@ -503,6 +499,7 @@ app.post("/contact", async (req, res) => {
         }
     );
 });
+
 /* =====================================================
    GET PRODUCTS
 ===================================================== */
