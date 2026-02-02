@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
-
+const mysql = require("mysql2");
 const path = require("path");
 const fs = require("fs");
 
@@ -38,8 +38,7 @@ app.use(cookieParser());
 app.use(cors({
     origin: [
         "http://localhost:5500",
-        "http://127.0.0.1:5500",
-        "https://my-storee.onrender.com"
+        "http://127.0.0.1:5500"
     ],
     credentials: true
 }));
@@ -47,32 +46,31 @@ app.use(cors({
 /* =====================================================
    MYSQL DATABASE
 ===================================================== */
-const mysql = require("mysql2/promise");
-
 let db;
 
-async function initDB() {
-    try {
-        const url = new URL(process.env.MYSQL_URL);
-
-        db = await mysql.createPool({
-            host: url.hostname,
-            port: url.port,
-            user: url.username,
-            password: url.password,
-            database: url.pathname.replace("/", ""),
-            ssl: { rejectUnauthorized: false },
-            waitForConnections: true,
-            connectionLimit: 10
-        });
-
-        console.log("✅ MySQL connected");
-    } catch (err) {
-        console.error("❌ DB CONNECTION ERROR:", err);
+try {
+    if (!process.env.MYSQL_URL) {
+        throw new Error("MYSQL_URL is not set in environment variables");
     }
-}
 
-initDB();
+    const url = new URL(process.env.MYSQL_URL);
+
+    db = mysql.createPool({
+        host: url.hostname,
+        port: url.port,
+        user: url.username,
+        password: url.password,
+        database: url.pathname.replace("/", ""),
+        ssl: { rejectUnauthorized: false },
+        waitForConnections: true,
+        connectionLimit: 10
+    });
+
+    console.log("✅ MySQL connected");
+
+} catch (err) {
+    console.error("❌ MYSQL CONNECTION ERROR:", err.message);
+}
 
 /* =====================================================
    OTP STORE
@@ -149,43 +147,49 @@ app.post("/send-code", async (req, res) => {
 /* =====================================================
    VERIFY CODE + LOGIN / REGISTER
 ===================================================== */
-app.post("/verify-code", async (req, res) => {
-    try {
-        const { email, code } = req.body;
-        const record = otpStore.get(email);
+app.post("/verify-code", (req, res) => {
+    const { email, code } = req.body;
+    const record = otpStore.get(email);
 
-        if (!record) return res.status(400).json({ error: "Code not found" });
-        if (Date.now() > record.expiresAt) return res.status(400).json({ error: "Code expired" });
-        if (record.code !== code) return res.status(400).json({ error: "Invalid code" });
+    if (!record) return res.status(400).json({ error: "Code not found" });
+    if (Date.now() > record.expiresAt) return res.status(400).json({ error: "Code expired" });
+    if (record.code !== code) return res.status(400).json({ error: "Invalid code" });
 
-        otpStore.delete(email);
+    otpStore.delete(email);
 
-        const [users] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
-
-        let userId;
-
-        if (users.length === 0) {
-            const [result] = await db.query("INSERT INTO users (email) VALUES (?)", [email]);
-            userId = result.insertId;
-        } else {
-            userId = users[0].id;
+    db.query("SELECT id FROM users WHERE email = ?", [email], (err, results) => {
+        if (err) {
+            console.error("DB error:", err);
+            return res.status(500).json({ error: "DB error" });
         }
 
-        const token = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: "7d" });
+        const user = results[0];
 
-        res.cookie("auth_token", token, {
-            httpOnly: true,
-            sameSite: "none",
-            secure: true,
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+        const login = (userId) => {
+            const token = jwt.sign(
+                { userId, email },
+                JWT_SECRET,
+                { expiresIn: "7d" }
+            );
 
-        res.json({ ok: true });
+            res.cookie("auth_token", token, {
+                httpOnly: true,
+                sameSite: "lax",
+                maxAge: 7 * 24 * 60 * 60 * 1000
+            });
 
-    } catch (err) {
-        console.error("VERIFY ERROR:", err);
-        res.status(500).json({ error: "Server error" });
-    }
+            res.json({ ok: true });
+        };
+
+        if (!user) {
+            db.query("INSERT INTO users (email) VALUES (?)", [email], (err, result) => {
+                if (err) return res.status(500).json({ error: "DB error" });
+                login(result.insertId);
+            });
+        } else {
+            login(user.id);
+        }
+    });
 });
 
 /* =====================================================
@@ -215,7 +219,70 @@ app.post("/logout", (req, res) => {
     res.clearCookie("auth_token");
     res.json({ ok: true });
 });
- 
+/* =====================================================
+   CREATE ORDER (AUTH USER)
+===================================================== */
+app.post("/orders", requireAuth, (req, res) => {
+    const { items, total } = req.body;
+
+    if (!items || !Array.isArray(items) || !total) {
+        return res.status(400).json({ error: "Invalid order data" });
+    }
+
+    db.query(
+        `
+        INSERT INTO orders (user_id, items, total)
+        VALUES (?, ?, ?)
+        `,
+        [
+            req.user.userId,
+            JSON.stringify(items),
+            total
+        ],
+        (err, result) => {
+            if (err) {
+                console.error("ORDER INSERT ERROR", err);
+                return res.status(500).json({ error: "Order save failed" });
+            }
+
+            res.json({
+                ok: true,
+                orderId: result.insertId
+            });
+        }
+    );
+});
+
+/* =====================================================
+   GET USER ORDERS
+===================================================== */
+app.get("/orders", requireAuth, (req, res) => {
+    db.query(
+        `
+        SELECT id, items, total, status, created_at
+        FROM orders
+        WHERE user_id = ?
+        ORDER BY created_at DESC
+        `,
+        [req.user.userId],
+        (err, rows) => {
+            if (err) {
+                console.error("ORDERS FETCH ERROR", err);
+                return res.status(500).json({ error: "Failed to load orders" });
+            }
+
+            const orders = rows.map(row => ({
+                id: row.id,
+                items: JSON.parse(row.items),
+                total: row.total,
+                status: row.status,
+                createdAt: row.created_at
+            }));
+
+            res.json({ orders });
+        }
+    );
+});
 /* =====================================================
    ORDER EMAIL TEMPLATE
 ===================================================== */
@@ -297,36 +364,48 @@ function orderEmailTemplate({ items, total }) {
    CREATE PAYMENT — AUTO LINK TO USER BY EMAIL
 ===================================================== */
 app.post("/create-payment", async (req, res) => {
-    try {
-        const { cart, total, email } = req.body;
 
-        // 🔒 ПЕРЕВІРКА ДО БД
-        if (!cart || !cart.length || !email) {
-            return res.status(400).json({ error: "Invalid data" });
-        }
+    const { cart, total, email } = req.body;
 
-        const numericTotal = Number(total.replace("₺", "").replace(",", ""));
-
-        const [order] = await db.query(
-            "INSERT INTO orders (user_email, total, status) VALUES (?, ?, ?)",
-            [email, numericTotal, "paid"]
-        );
-
-        const orderId = order.insertId;
-
-        for (const item of cart) {
-            await db.query(
-                "INSERT INTO order_items (order_id, title, price, qty, image, size) VALUES (?, ?, ?, ?, ?, ?)",
-                [orderId, item.title, item.price, item.qty, item.image, item.size || ""]
-            );
-        }
-
-        res.json({ ok: true, orderId });
-
-    } catch (err) {
-        console.error("PAYMENT ERROR:", err);
-        res.status(500).json({ error: "Server error" });
+    if (!cart || !cart.length) {
+        return res.status(400).json({ error: "Cart is empty" });
     }
+
+    const numericTotal = Number(total.replace("₺", "").replace(",", ""));
+
+    db.query(
+        `
+        INSERT INTO orders (user_id, items, total, status)
+        VALUES (?, ?, ?, ?)
+        `,
+        [null, JSON.stringify(cart), numericTotal, "paid"],
+        async (err, result) => {
+
+            if (err) {
+                console.error("ORDER SAVE ERROR", err);
+                return res.status(500).json({ error: "Order save failed" });
+            }
+
+            try {
+                const { html } = orderEmailTemplate({
+                    items: cart,
+                    total: numericTotal.toFixed(2)
+                });
+
+                await resend.emails.send({
+                    from: "La Mia Rosa <onboarding@resend.dev>",
+                    to: email,
+                    subject: "Order confirmation – La Mia Rosa",
+                    html
+                });
+
+            } catch (mailErr) {
+                console.error("EMAIL ERROR", mailErr);
+            }
+
+            res.json({ ok: true, orderId: result.insertId });
+        }
+    );
 });
 
 
@@ -367,30 +446,54 @@ app.get("/test-email", async (req, res) => {
    CONTACT FORM API
 ===================================================== */
 app.post("/contact", async (req, res) => {
-    try {
-        const { name, email, phone, comment } = req.body;
+    const { name, email, phone, comment } = req.body;
 
-        await db.query(
-            "INSERT INTO messages (name, email, phone, comment) VALUES (?, ?, ?, ?)",
-            [name || "", email, phone || "", comment]
-        );
+    db.query(
+        `
+        INSERT INTO contacts (name, email, phone, message)
+        VALUES (?, ?, ?, ?)
+        `,
+        [name || "", email, phone || "", comment],
+        async (err) => {
 
-        await resend.emails.send({
-            from: "La Mia Rosa <onboarding@resend.dev>",
-            to: "gogilchyn2005ilona@gmail.com",
-            subject: "New message",
-            html: `<p>${comment}</p>`
-        });
+            if (err) return res.status(500).json({ error: "Database error" });
 
-        res.json({ success: true });
+            try {
+                await resend.emails.send({
+                    from: "La Mia Rosa <onboarding@resend.dev>",
+                    to: "gogilchyn2005ilona@gmail.com",
+                    subject: "New message from Communication page",
+                    html: `
+                        <h2>New Customer Message</h2>
+                        <p><strong>Name:</strong> ${name}</p>
+                        <p><strong>Email:</strong> ${email}</p>
+                        <p><strong>Phone:</strong> ${phone}</p>
+                        <p><strong>Message:</strong><br/>${comment}</p>
+                    `
+                });
+            } catch (mailErr) {
+                console.error("CONTACT EMAIL ERROR", mailErr);
+            }
 
-    } catch (err) {
-        console.error("CONTACT ERROR:", err);
-        res.status(500).json({ error: "Server error" });
-    }
+            res.json({ success: true });
+        }
+    );
 });
 
- 
+
+/* =====================================================
+   GET PRODUCTS
+===================================================== */
+app.get("/products", (req, res) => {
+    db.query("SELECT * FROM products ORDER BY id DESC", (err, rows) => {
+        if (err) {
+            console.error("PRODUCT FETCH ERROR", err);
+            return res.status(500).json({ error: "Database error" });
+        }
+
+        res.json(rows);
+    });
+});
 
 /* =====================================================
    START SERVER
