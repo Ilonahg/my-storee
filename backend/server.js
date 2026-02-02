@@ -5,7 +5,8 @@ const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 const { Resend } = require("resend");
 const resend = new Resend(process.env.RESEND_API_KEY);
-const mysql = require("mysql2");
+const mysql = require("mysql2/promise");
+
 const path = require("path");
 const fs = require("fs");
 
@@ -254,35 +255,36 @@ app.post("/orders", requireAuth, (req, res) => {
 });
 
 /* =====================================================
-   GET USER ORDERS
+   GET USER ORDERS (NEW STRUCTURE)
 ===================================================== */
-app.get("/orders", requireAuth, (req, res) => {
-    db.query(
-        `
-        SELECT id, items, total, status, created_at
-        FROM orders
-        WHERE user_id = ?
-        ORDER BY created_at DESC
-        `,
-        [req.user.userId],
-        (err, rows) => {
-            if (err) {
-                console.error("ORDERS FETCH ERROR", err);
-                return res.status(500).json({ error: "Failed to load orders" });
-            }
+app.get("/orders", requireAuth, async (req, res) => {
+    try {
+        const [orders] = await db.query(
+            `SELECT id, total, status, created_at
+             FROM orders
+             WHERE user_email = ?
+             ORDER BY created_at DESC`,
+            [req.user.email]
+        );
 
-            const orders = rows.map(row => ({
-                id: row.id,
-                items: JSON.parse(row.items),
-                total: row.total,
-                status: row.status,
-                createdAt: row.created_at
-            }));
-
-            res.json({ orders });
+        for (let order of orders) {
+            const [items] = await db.query(
+                `SELECT title, price, qty, image, size
+                 FROM order_items
+                 WHERE order_id = ?`,
+                [order.id]
+            );
+            order.items = items;
         }
-    );
+
+        res.json({ orders });
+
+    } catch (err) {
+        console.error("ORDERS FETCH ERROR", err);
+        res.status(500).json({ error: "Failed to load orders" });
+    }
 });
+
 /* =====================================================
    ORDER EMAIL TEMPLATE
 ===================================================== */
@@ -361,7 +363,7 @@ function orderEmailTemplate({ items, total }) {
 }
 
 /* =====================================================
-   CREATE PAYMENT — SAVE ORDER + SEND EMAIL
+   CREATE PAYMENT — SAVE ORDER + ITEMS + EMAIL
 ===================================================== */
 app.post("/create-payment", async (req, res) => {
     try {
@@ -382,7 +384,8 @@ app.post("/create-payment", async (req, res) => {
 
         for (const item of cart) {
             await db.query(
-                "INSERT INTO order_items (order_id, title, price, qty, image, size) VALUES (?, ?, ?, ?, ?, ?)",
+                `INSERT INTO order_items (order_id, title, price, qty, image, size)
+                 VALUES (?, ?, ?, ?, ?, ?)`,
                 [orderId, item.title, item.price, item.qty, item.image, item.size || ""]
             );
         }
@@ -406,6 +409,7 @@ app.post("/create-payment", async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+
 
 /* =====================================================
    TEST EMAIL
@@ -472,6 +476,7 @@ app.post("/contact", async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+
 
 /* =====================================================
    GET PRODUCTS
