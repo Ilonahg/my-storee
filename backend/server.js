@@ -109,12 +109,9 @@ app.post("/send-code", async (req, res) => {
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = Date.now() + 5 * 60 * 1000;
 
-        // видаляємо старі коди цього email
-        await db.query("DELETE FROM otp_codes WHERE email = ?", [email]);
-
-        // зберігаємо новий код
+        await db.query("DELETE FROM login_codes WHERE email = ?", [email]);
         await db.query(
-            "INSERT INTO otp_codes (email, code, expires_at) VALUES (?, ?, ?)",
+            "INSERT INTO login_codes (email, code, expires_at) VALUES (?, ?, ?)",
             [email, code, expiresAt]
         );
 
@@ -122,13 +119,12 @@ app.post("/send-code", async (req, res) => {
             from: "La Mia Rosa <onboarding@resend.dev>",
             to: email,
             subject: "Your login code",
-            html: `<h2>Your login code</h2><h1>${code}</h1><p>Expires in 5 minutes</p>`
+            html: `<h2>Your login code: ${code}</h2>`
         });
 
         res.json({ ok: true });
-
     } catch (err) {
-        console.error("SEND CODE ERROR", err);
+        console.error(err);
         res.status(500).json({ error: "Mail error" });
     }
 });
@@ -137,52 +133,40 @@ app.post("/send-code", async (req, res) => {
    VERIFY CODE + LOGIN / REGISTER
 ===================================================== */
 app.post("/verify-code", async (req, res) => {
-    try {
-        const { email, code } = req.body;
+    const { email, code } = req.body;
 
-        const [rows] = await db.query(
-            "SELECT * FROM otp_codes WHERE email = ? AND code = ?",
-            [email, code]
-        );
+    const [rows] = await db.query(
+        "SELECT * FROM login_codes WHERE email = ? AND code = ?",
+        [email, code]
+    );
 
-        if (rows.length === 0)
-            return res.status(400).json({ error: "Invalid code" });
+    if (!rows.length) return res.status(400).json({ error: "Invalid code" });
 
-        const record = rows[0];
+    if (Date.now() > rows[0].expires_at)
+        return res.status(400).json({ error: "Code expired" });
 
-        if (Date.now() > record.expires_at)
-            return res.status(400).json({ error: "Code expired" });
+    await db.query("DELETE FROM login_codes WHERE email = ?", [email]);
 
-        // код використали → видаляємо
-        await db.query("DELETE FROM otp_codes WHERE email = ?", [email]);
+    const [users] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
 
-        const [users] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
-
-        let userId;
-
-        if (users.length === 0) {
-            const [result] = await db.query("INSERT INTO users (email) VALUES (?)", [email]);
-            userId = result.insertId;
-        } else {
-            userId = users[0].id;
-        }
-
-        const token = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: "7d" });
-
-        res.cookie("auth_token", token, {
-            httpOnly: true,
-            sameSite: "lax",
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
-
-        res.json({ ok: true });
-
-    } catch (err) {
-        console.error("VERIFY ERROR:", err);
-        res.status(500).json({ error: "Server error" });
+    let userId;
+    if (users.length === 0) {
+        const [result] = await db.query("INSERT INTO users (email) VALUES (?)", [email]);
+        userId = result.insertId;
+    } else {
+        userId = users[0].id;
     }
-});
 
+    const token = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: "7d" });
+
+    res.cookie("auth_token", token, {
+        httpOnly: true,
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({ ok: true });
+});
 
 /* =====================================================
    GET CURRENT USER
