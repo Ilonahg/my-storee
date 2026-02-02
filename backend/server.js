@@ -290,26 +290,12 @@ app.get("/orders", requireAuth, async (req, res) => {
 ===================================================== */
 function orderEmailTemplate({ items, total }) {
 
-  let attachments = [];
-
-  const itemsHtml = items.map((item, index) => {
-
-    const cid = `product${index}@lamia`;
-    const imagePath = path.join(__dirname, "../", item.image);
-
-    if (fs.existsSync(imagePath)) {
-      attachments.push({
-        filename: path.basename(imagePath),
-        path: imagePath,
-        cid
-      });
-    }
-
-    return `
+  const itemsHtml = items.map(item => `
       <tr>
         <td style="padding:12px 0;">
-          <img src="cid:${cid}" width="70" height="70"
-            style="border-radius:8px; object-fit:cover;" />
+          <img src="https://my-storee.onrender.com/${item.image}"
+               width="70" height="70"
+               style="border-radius:8px; object-fit:cover;" />
         </td>
         <td style="padding:12px 10px; font-family:Arial;">
           <strong>${item.title}</strong><br/>
@@ -319,8 +305,7 @@ function orderEmailTemplate({ items, total }) {
           ₺${(item.price * item.qty).toFixed(2)}
         </td>
       </tr>
-    `;
-  }).join("");
+  `).join("");
 
   const html = `
   <div style="background:#f5f5f5; padding:30px 0; font-family:Arial;">
@@ -359,8 +344,9 @@ function orderEmailTemplate({ items, total }) {
   </div>
   `;
 
-  return { html, attachments };
+  return { html };
 }
+
 
 /* =====================================================
    CREATE PAYMENT — SAVE ORDER + ITEMS + EMAIL
