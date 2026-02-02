@@ -361,53 +361,51 @@ function orderEmailTemplate({ items, total }) {
 }
 
 /* =====================================================
-   CREATE PAYMENT — AUTO LINK TO USER BY EMAIL
+   CREATE PAYMENT — SAVE ORDER + SEND EMAIL
 ===================================================== */
 app.post("/create-payment", async (req, res) => {
+    try {
+        const { cart, total, email } = req.body;
 
-    const { cart, total, email } = req.body;
-
-    if (!cart || !cart.length) {
-        return res.status(400).json({ error: "Cart is empty" });
-    }
-
-    const numericTotal = Number(total.replace("₺", "").replace(",", ""));
-
-    db.query(
-        `
-        INSERT INTO orders (user_id, items, total, status)
-        VALUES (?, ?, ?, ?)
-        `,
-        [null, JSON.stringify(cart), numericTotal, "paid"],
-        async (err, result) => {
-
-            if (err) {
-                console.error("ORDER SAVE ERROR", err);
-                return res.status(500).json({ error: "Order save failed" });
-            }
-
-            try {
-                const { html } = orderEmailTemplate({
-                    items: cart,
-                    total: numericTotal.toFixed(2)
-                });
-
-                await resend.emails.send({
-                    from: "La Mia Rosa <onboarding@resend.dev>",
-                    to: email,
-                    subject: "Order confirmation – La Mia Rosa",
-                    html
-                });
-
-            } catch (mailErr) {
-                console.error("EMAIL ERROR", mailErr);
-            }
-
-            res.json({ ok: true, orderId: result.insertId });
+        if (!cart || !cart.length || !email) {
+            return res.status(400).json({ error: "Invalid data" });
         }
-    );
-});
 
+        const numericTotal = Number(total.replace("₺", "").replace(",", ""));
+
+        const [order] = await db.query(
+            "INSERT INTO orders (user_email, total, status) VALUES (?, ?, ?)",
+            [email, numericTotal, "paid"]
+        );
+
+        const orderId = order.insertId;
+
+        for (const item of cart) {
+            await db.query(
+                "INSERT INTO order_items (order_id, title, price, qty, image, size) VALUES (?, ?, ?, ?, ?, ?)",
+                [orderId, item.title, item.price, item.qty, item.image, item.size || ""]
+            );
+        }
+
+        const { html } = orderEmailTemplate({
+            items: cart,
+            total: numericTotal.toFixed(2)
+        });
+
+        await resend.emails.send({
+            from: "La Mia Rosa <onboarding@resend.dev>",
+            to: email,
+            subject: "Order confirmation – La Mia Rosa",
+            html
+        });
+
+        res.json({ ok: true, orderId });
+
+    } catch (err) {
+        console.error("PAYMENT ERROR:", err);
+        res.status(500).json({ error: "Server error" });
+    }
+});
 
 /* =====================================================
    TEST EMAIL
@@ -446,40 +444,34 @@ app.get("/test-email", async (req, res) => {
    CONTACT FORM API
 ===================================================== */
 app.post("/contact", async (req, res) => {
-    const { name, email, phone, comment } = req.body;
+    try {
+        const { name, email, phone, comment } = req.body;
 
-    db.query(
-        `
-        INSERT INTO contacts (name, email, phone, message)
-        VALUES (?, ?, ?, ?)
-        `,
-        [name || "", email, phone || "", comment],
-        async (err) => {
+        await db.query(
+            "INSERT INTO messages (name, email, phone, comment) VALUES (?, ?, ?, ?)",
+            [name || "", email, phone || "", comment]
+        );
 
-            if (err) return res.status(500).json({ error: "Database error" });
+        await resend.emails.send({
+            from: "La Mia Rosa <onboarding@resend.dev>",
+            to: "gogilchyn2005ilona@gmail.com",
+            subject: "New message from Communication page",
+            html: `
+                <h2>New Customer Message</h2>
+                <p><strong>Name:</strong> ${name}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Phone:</strong> ${phone}</p>
+                <p><strong>Message:</strong><br/>${comment}</p>
+            `
+        });
 
-            try {
-                await resend.emails.send({
-                    from: "La Mia Rosa <onboarding@resend.dev>",
-                    to: "gogilchyn2005ilona@gmail.com",
-                    subject: "New message from Communication page",
-                    html: `
-                        <h2>New Customer Message</h2>
-                        <p><strong>Name:</strong> ${name}</p>
-                        <p><strong>Email:</strong> ${email}</p>
-                        <p><strong>Phone:</strong> ${phone}</p>
-                        <p><strong>Message:</strong><br/>${comment}</p>
-                    `
-                });
-            } catch (mailErr) {
-                console.error("CONTACT EMAIL ERROR", mailErr);
-            }
+        res.json({ success: true });
 
-            res.json({ success: true });
-        }
-    );
+    } catch (err) {
+        console.error("CONTACT ERROR:", err);
+        res.status(500).json({ error: "Server error" });
+    }
 });
-
 
 /* =====================================================
    GET PRODUCTS
