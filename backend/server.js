@@ -364,21 +364,6 @@ app.post("/create-payment", async (req, res) => {
         return res.status(400).json({ error: "Cart is empty" });
     }
 
-    if (!email) {
-        return res.status(400).json({ error: "Email required" });
-    }
-
-    // 🔐 ДІСТАЄМО КОРИСТУВАЧА З COOKIE
-    let userId = null;
-
-    const token = req.cookies.auth_token;
-    if (token) {
-        try {
-            const payload = jwt.verify(token, JWT_SECRET);
-            userId = payload.userId;
-        } catch {}
-    }
-
     const numericTotal = Number(total.replace("₺", "").replace(",", ""));
 
     db.query(
@@ -386,12 +371,7 @@ app.post("/create-payment", async (req, res) => {
         INSERT INTO orders (user_id, items, total, status)
         VALUES (?, ?, ?, ?)
         `,
-        [
-            userId,
-            JSON.stringify(cart),
-            numericTotal,
-            "paid"
-        ],
+        [null, JSON.stringify(cart), numericTotal, "paid"],
         async (err, result) => {
 
             if (err) {
@@ -409,7 +389,7 @@ app.post("/create-payment", async (req, res) => {
                     from: "La Mia Rosa <onboarding@resend.dev>",
                     to: email,
                     subject: "Order confirmation – La Mia Rosa",
-                    html: html
+                    html
                 });
 
             } catch (mailErr) {
@@ -420,6 +400,7 @@ app.post("/create-payment", async (req, res) => {
         }
     );
 });
+
 
 /* =====================================================
    TEST EMAIL
@@ -460,10 +441,6 @@ app.get("/test-email", async (req, res) => {
 app.post("/contact", async (req, res) => {
     const { name, email, phone, comment } = req.body;
 
-    if (!email || !comment) {
-        return res.status(400).json({ error: "Missing required fields" });
-    }
-
     db.query(
         `
         INSERT INTO contacts (name, email, phone, message)
@@ -472,10 +449,7 @@ app.post("/contact", async (req, res) => {
         [name || "", email, phone || "", comment],
         async (err) => {
 
-            if (err) {
-                console.error("CONTACT DB ERROR", err);
-                return res.status(500).json({ error: "Database error" });
-            }
+            if (err) return res.status(500).json({ error: "Database error" });
 
             try {
                 await resend.emails.send({
@@ -490,7 +464,6 @@ app.post("/contact", async (req, res) => {
                         <p><strong>Message:</strong><br/>${comment}</p>
                     `
                 });
-
             } catch (mailErr) {
                 console.error("CONTACT EMAIL ERROR", mailErr);
             }
@@ -499,6 +472,7 @@ app.post("/contact", async (req, res) => {
         }
     );
 });
+
 
 /* =====================================================
    GET PRODUCTS
