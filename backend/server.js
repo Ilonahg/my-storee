@@ -220,40 +220,7 @@ app.post("/logout", (req, res) => {
     res.clearCookie("auth_token");
     res.json({ ok: true });
 });
-/* =====================================================
-   CREATE ORDER (AUTH USER)
-===================================================== */
-app.post("/orders", requireAuth, (req, res) => {
-    const { items, total } = req.body;
-
-    if (!items || !Array.isArray(items) || !total) {
-        return res.status(400).json({ error: "Invalid order data" });
-    }
-
-    db.query(
-        `
-        INSERT INTO orders (user_id, items, total)
-        VALUES (?, ?, ?)
-        `,
-        [
-            req.user.userId,
-            JSON.stringify(items),
-            total
-        ],
-        (err, result) => {
-            if (err) {
-                console.error("ORDER INSERT ERROR", err);
-                return res.status(500).json({ error: "Order save failed" });
-            }
-
-            res.json({
-                ok: true,
-                orderId: result.insertId
-            });
-        }
-    );
-});
-
+ 
 /* =====================================================
    GET USER ORDERS (NEW STRUCTURE)
 ===================================================== */
@@ -293,7 +260,8 @@ function orderEmailTemplate({ items, total }) {
   const itemsHtml = items.map(item => `
       <tr>
         <td style="padding:12px 0;">
-          <img src="https://my-storee.onrender.com/${item.image}"
+          <img src="https://my-storee.onrender.com/${item.image.replace(/^\/?/, '')}"
+
                width="70" height="70"
                style="border-radius:8px; object-fit:cover;" />
         </td>
