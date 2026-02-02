@@ -49,19 +49,31 @@ app.use(cors({
 let db;
 
 if (process.env.MYSQL_URL) {
-    // 🌍 Railway database
-    db = mysql.createPool(process.env.MYSQL_URL);
+    const url = new URL(process.env.MYSQL_URL);
+
+    db = mysql.createPool({
+        host: url.hostname,
+        port: url.port,
+        user: url.username,
+        password: url.password,
+        database: url.pathname.replace("/", ""),
+        ssl: {
+            rejectUnauthorized: false
+        },
+        waitForConnections: true,
+        connectionLimit: 10
+    });
+
+    console.log("🌍 Connected to Railway MySQL");
 } else {
-    // 💻 Local database
     db = mysql.createPool({
         host: process.env.MYSQL_HOST,
         user: process.env.MYSQL_USER,
         password: process.env.MYSQL_PASSWORD,
-        database: process.env.MYSQL_DB,
-        waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0
+        database: process.env.MYSQL_DB
     });
+
+    console.log("💻 Connected to Local MySQL");
 }
 
  
