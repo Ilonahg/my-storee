@@ -73,11 +73,7 @@ try {
     console.error("❌ MYSQL CONNECTION ERROR:", err.message);
 }
 
-/* =====================================================
-   OTP STORE
-===================================================== */
-const otpStore = new Map();
-
+ 
 /* =====================================================
    AUTH MIDDLEWARE
 ===================================================== */
@@ -110,31 +106,23 @@ app.post("/send-code", async (req, res) => {
         const { email } = req.body;
         if (!email) return res.status(400).json({ error: "Email required" });
 
-        const existing = otpStore.get(email);
-        if (existing && Date.now() < existing.expiresAt) {
-            return res.json({ ok: true });
-        }
-
         const code = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = Date.now() + 5 * 60 * 1000;
 
-        otpStore.set(email, {
-            code,
-            expiresAt: Date.now() + 5 * 60 * 1000
-        });
+        // видаляємо старі коди цього email
+        await db.query("DELETE FROM otp_codes WHERE email = ?", [email]);
+
+        // зберігаємо новий код
+        await db.query(
+            "INSERT INTO otp_codes (email, code, expires_at) VALUES (?, ?, ?)",
+            [email, code, expiresAt]
+        );
 
         await resend.emails.send({
             from: "La Mia Rosa <onboarding@resend.dev>",
             to: email,
             subject: "Your login code",
-            html: `
-                <div style="font-family:Arial;padding:20px">
-                    <h2>Your login code</h2>
-                    <p style="font-size:28px;font-weight:bold;letter-spacing:4px;">
-                        ${code}
-                    </p>
-                    <p>This code expires in 5 minutes.</p>
-                </div>
-            `
+            html: `<h2>Your login code</h2><h1>${code}</h1><p>Expires in 5 minutes</p>`
         });
 
         res.json({ ok: true });
@@ -148,50 +136,53 @@ app.post("/send-code", async (req, res) => {
 /* =====================================================
    VERIFY CODE + LOGIN / REGISTER
 ===================================================== */
-app.post("/verify-code", (req, res) => {
-    const { email, code } = req.body;
-    const record = otpStore.get(email);
+app.post("/verify-code", async (req, res) => {
+    try {
+        const { email, code } = req.body;
 
-    if (!record) return res.status(400).json({ error: "Code not found" });
-    if (Date.now() > record.expiresAt) return res.status(400).json({ error: "Code expired" });
-    if (record.code !== code) return res.status(400).json({ error: "Invalid code" });
+        const [rows] = await db.query(
+            "SELECT * FROM otp_codes WHERE email = ? AND code = ?",
+            [email, code]
+        );
 
-    otpStore.delete(email);
+        if (rows.length === 0)
+            return res.status(400).json({ error: "Invalid code" });
 
-    db.query("SELECT id FROM users WHERE email = ?", [email], (err, results) => {
-        if (err) {
-            console.error("DB error:", err);
-            return res.status(500).json({ error: "DB error" });
-        }
+        const record = rows[0];
 
-        const user = results[0];
+        if (Date.now() > record.expires_at)
+            return res.status(400).json({ error: "Code expired" });
 
-        const login = (userId) => {
-            const token = jwt.sign(
-                { userId, email },
-                JWT_SECRET,
-                { expiresIn: "7d" }
-            );
+        // код використали → видаляємо
+        await db.query("DELETE FROM otp_codes WHERE email = ?", [email]);
 
-            res.cookie("auth_token", token, {
-                httpOnly: true,
-                sameSite: "lax",
-                maxAge: 7 * 24 * 60 * 60 * 1000
-            });
+        const [users] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
 
-            res.json({ ok: true });
-        };
+        let userId;
 
-        if (!user) {
-            db.query("INSERT INTO users (email) VALUES (?)", [email], (err, result) => {
-                if (err) return res.status(500).json({ error: "DB error" });
-                login(result.insertId);
-            });
+        if (users.length === 0) {
+            const [result] = await db.query("INSERT INTO users (email) VALUES (?)", [email]);
+            userId = result.insertId;
         } else {
-            login(user.id);
+            userId = users[0].id;
         }
-    });
+
+        const token = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: "7d" });
+
+        res.cookie("auth_token", token, {
+            httpOnly: true,
+            sameSite: "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        });
+
+        res.json({ ok: true });
+
+    } catch (err) {
+        console.error("VERIFY ERROR:", err);
+        res.status(500).json({ error: "Server error" });
+    }
 });
+
 
 /* =====================================================
    GET CURRENT USER
