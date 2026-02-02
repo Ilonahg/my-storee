@@ -116,7 +116,7 @@ app.post("/send-code", async (req, res) => {
         );
 
         await resend.emails.send({
-            from: "La Mia Rosa <onboarding@resend.dev>",
+            from: "La Mia Rosa <noreply@resend.dev>",
             to: email,
             subject: "Your login code",
             html: `<h2>Your login code: ${code}</h2>`
@@ -325,7 +325,7 @@ app.post("/create-payment", async (req, res) => {
         });
 
         await resend.emails.send({
-            from: "La Mia Rosa <onboarding@resend.dev>",
+            from: "La Mia Rosa <noreply@resend.dev>",
             to: email,
             subject: "Order confirmation – La Mia Rosa",
             html
@@ -359,7 +359,7 @@ app.get("/test-email", async (req, res) => {
         });
 
         await resend.emails.send({
-            from: "La Mia Rosa <onboarding@resend.dev>",
+            from: "La Mia Rosa <noreply@resend.dev>",
             to: "gogilchyn2005ilona@gmail.com",
             subject: "TEST ORDER EMAIL – La Mia Rosa",
             html: html
@@ -386,7 +386,7 @@ app.post("/contact", async (req, res) => {
         );
 
         await resend.emails.send({
-            from: "La Mia Rosa <onboarding@resend.dev>",
+            from: "La Mia Rosa <noreply@resend.dev>",
             to: "gogilchyn2005ilona@gmail.com",
             subject: "New message from Communication page",
             html: `
