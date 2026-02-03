@@ -771,29 +771,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeAuth = document.getElementById("closeAuth");
 
     const authEmail = document.getElementById("authEmail");
+    const passwordInput = document.getElementById("authPassword"); // ✅ тепер з HTML
     const authSubmit = document.getElementById("authSubmit");
     const authMessage = document.getElementById("authMessage");
 
     if (!authOverlay || !openAuth || !authSubmit) return;
 
     let locked = false;
-
-    /* ---------- ADD PASSWORD FIELD ---------- */
-
-    const passwordInput = document.createElement("input");
-    passwordInput.type = "password";
-    passwordInput.placeholder = "Password";
-    passwordInput.className = "auth-input";
-    passwordInput.id = "authPassword";
-    authEmail.after(passwordInput);
-
-    /* ---------- ADD FORGOT PASSWORD BUTTON ---------- */
-
-    const forgotBtn = document.createElement("button");
-    forgotBtn.textContent = "Forgot password?";
-    forgotBtn.type = "button";
-    forgotBtn.className = "auth-link-btn";
-    passwordInput.after(forgotBtn);
 
     /* ---------- UI ---------- */
 
@@ -882,7 +866,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* ---------- RESET PASSWORD ---------- */
 
-    forgotBtn.addEventListener("click", async () => {
+    const forgotBtn = document.getElementById("forgotPasswordBtn");
+
+    forgotBtn?.addEventListener("click", async () => {
         const email = prompt("Enter your email");
         const newPass = prompt("Enter new password");
 
