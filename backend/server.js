@@ -45,6 +45,36 @@ app.use(cors({
     ],
     credentials: true
 }));
+/* =====================================================
+   MYSQL DATABASE
+===================================================== */
+let db;
+
+try {
+    if (!process.env.MYSQL_URL) {
+        throw new Error("MYSQL_URL is not set in environment variables");
+    }
+
+    const url = new URL(process.env.MYSQL_URL);
+
+    db = mysql.createPool({
+        host: url.hostname,
+        port: url.port,
+        user: url.username,
+        password: url.password,
+        database: url.pathname.replace("/", ""),
+        ssl: { rejectUnauthorized: false },
+        waitForConnections: true,
+        connectionLimit: 10
+    });
+
+    console.log("✅ MySQL connected");
+
+} catch (err) {
+    console.error("❌ MYSQL CONNECTION ERROR:", err.message);
+}
+
+ 
 
 /* =====================================================
    REGISTER
@@ -119,35 +149,6 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-
-/* =====================================================
-   MYSQL DATABASE
-===================================================== */
-let db;
-
-try {
-    if (!process.env.MYSQL_URL) {
-        throw new Error("MYSQL_URL is not set in environment variables");
-    }
-
-    const url = new URL(process.env.MYSQL_URL);
-
-    db = mysql.createPool({
-        host: url.hostname,
-        port: url.port,
-        user: url.username,
-        password: url.password,
-        database: url.pathname.replace("/", ""),
-        ssl: { rejectUnauthorized: false },
-        waitForConnections: true,
-        connectionLimit: 10
-    });
-
-    console.log("✅ MySQL connected");
-
-} catch (err) {
-    console.error("❌ MYSQL CONNECTION ERROR:", err.message);
-}
 
  
 /* =====================================================
