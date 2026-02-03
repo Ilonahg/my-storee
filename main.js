@@ -913,25 +913,7 @@ function updateCartCount() {
 
 /* =====================================================
    POLICY MODAL — FULL LEGAL CONTENT (LA MIA ROSA)
-   Professional / Safe / No Shopify Mentions
 ===================================================== */
-
- 
-
-    const policyModal  = document.getElementById("policyModal");
-    const policyTitle  = document.getElementById("policyTitle");
-    const policyBody   = document.getElementById("policyBody");
-    const policyClose  = document.getElementById("policyClose");
-
-    if (!policyModal || !policyTitle || !policyBody) {
-        console.warn("Policy modal not found in HTML");
-        return;
-    }
-
-/* =====================================================
-   POLICY MODAL — FULL LEGAL CONTENT (LA MIA ROSA)
-===================================================== */
-
 (function initPolicyModal() {
 
 const policyModal  = document.getElementById("policyModal");
@@ -1046,7 +1028,6 @@ document.addEventListener("keydown", e => {
 });
 
 })();
-
 
 /* ========================================================= */
 /* ACCOUNT — SINGLE CLEAN BLOCK */
