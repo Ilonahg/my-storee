@@ -761,7 +761,7 @@ function updateCartCount() {
 }
 
 /* =====================================================
-   AUTH OVERLAY — EMAIL + PASSWORD LOGIN
+   AUTH OVERLAY — EMAIL + PASSWORD LOGIN + RESET
 ===================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -770,24 +770,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const openAuth = document.getElementById("openAuth");
     const closeAuth = document.getElementById("closeAuth");
 
-    const authRegister = document.getElementById("authRegister");
-
     const authEmail = document.getElementById("authEmail");
     const authSubmit = document.getElementById("authSubmit");
     const authMessage = document.getElementById("authMessage");
+    const forgotBtn = document.getElementById("forgotPasswordBtn");
 
     if (!authOverlay || !openAuth || !authSubmit) return;
 
     let locked = false;
 
-    /* ---------- ADD PASSWORD FIELD DYNAMICALLY ---------- */
+    /* ---------- PASSWORD FIELD (create once) ---------- */
 
-    const passwordInput = document.createElement("input");
-    passwordInput.type = "password";
-    passwordInput.placeholder = "Password";
-    passwordInput.className = "auth-input";
-    passwordInput.id = "authPassword";
-    authEmail.after(passwordInput);
+    let passwordInput = document.getElementById("authPassword");
+
+    if (!passwordInput) {
+        passwordInput = document.createElement("input");
+        passwordInput.type = "password";
+        passwordInput.placeholder = "Password";
+        passwordInput.className = "auth-input";
+        passwordInput.id = "authPassword";
+        authEmail.after(passwordInput);
+    }
 
     /* ---------- UI ---------- */
 
@@ -846,7 +849,6 @@ document.addEventListener("DOMContentLoaded", () => {
         authMessage.textContent = "Logging in...";
 
         try {
-            // СПЕРШУ ПРОБУЄМО LOGIN
             let res = await fetch(`${API}/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -854,7 +856,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify({ email, password })
             });
 
-            // якщо не існує — реєструємо
             if (!res.ok) {
                 res = await fetch(`${API}/register`, {
                     method: "POST",
@@ -876,7 +877,31 @@ document.addEventListener("DOMContentLoaded", () => {
         locked = false;
     });
 
+    /* ---------- RESET PASSWORD ---------- */
+
+    forgotBtn?.addEventListener("click", async () => {
+
+        const email = prompt("Enter your email");
+        const newPass = prompt("Enter new password");
+
+        if (!email || !newPass) return;
+
+        try {
+            const res = await fetch(`${API}/reset-password`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, newPassword: newPass })
+            });
+
+            if (!res.ok) throw new Error();
+            alert("Password updated! Now login.");
+        } catch {
+            alert("Error resetting password");
+        }
+    });
+
 });
+
 
 /* =====================================================
    POLICY MODAL — FULL LEGAL CONTENT (LA MIA ROSA)

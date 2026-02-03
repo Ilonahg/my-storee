@@ -150,7 +150,37 @@ app.post("/login", async (req, res) => {
   }
 });
 
- 
+/* =====================================================
+   RESET PASSWORD (TRAINING MODE)
+===================================================== */
+app.post("/reset-password", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ error: "Missing data" });
+    }
+
+    const [users] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+    if (!users.length) {
+      return res.status(400).json({ error: "User not found" });
+    }
+
+    const hash = await bcrypt.hash(newPassword, 10);
+
+    await db.query(
+      "UPDATE users SET password_hash = ? WHERE email = ?",
+      [hash, email]
+    );
+
+    res.json({ ok: true });
+
+  } catch (err) {
+    console.error("RESET PASSWORD ERROR", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 /* =====================================================
    AUTH MIDDLEWARE
 ===================================================== */
