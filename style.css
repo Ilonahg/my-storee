@@ -5026,3 +5026,18 @@ body[data-page="checkout"] {
 #forgotPasswordBtn:hover {
   color: #000;
 }
+/* ===============================
+   AUTH MODAL — SCREEN FIT FIX
+   Фікс щоб верх не обрізався
+=============================== */
+
+.auth-overlay {
+  align-items: flex-start;   /* було center */
+  padding-top: 60px;         /* відступ від верху */
+  padding-bottom: 40px;
+  overflow-y: auto;          /* якщо все ж не влазить */
+}
+
+.auth-box {
+  margin: auto 0;            /* залишає по центру по ширині */
+}
