@@ -781,10 +781,8 @@ function updateCartCount() {
     const codeBtn = document.getElementById("emailCodeSubmit");
     const codeMsg = document.getElementById("emailCodeMessage");
 
-    if (!authOverlay || !openAuth) {
-      console.warn("Auth not available on this page");
-      return;
-    }
+    if (!authOverlay || !openAuth || !authSubmit) return;
+
 
     let locked = false;
 
