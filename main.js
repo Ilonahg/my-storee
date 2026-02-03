@@ -761,7 +761,7 @@ function updateCartCount() {
 }
 
 /* =====================================================
-   AUTH OVERLAY — EMAIL + PASSWORD LOGIN + RESET
+   AUTH OVERLAY — EMAIL + PASSWORD LOGIN + RESET MODAL
 ===================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -791,6 +791,15 @@ document.addEventListener("DOMContentLoaded", () => {
         passwordInput.id = "authPassword";
         authEmail.after(passwordInput);
     }
+
+    /* ---------- RESET MODAL ELEMENTS ---------- */
+
+    const resetModal = document.getElementById("resetModal");
+    const resetConfirmBtn = document.getElementById("resetConfirmBtn");
+    const resetCancelBtn = document.getElementById("resetCancelBtn");
+    const resetStatus = document.getElementById("resetStatus");
+    const resetEmail = document.getElementById("resetEmail");
+    const resetNewPassword = document.getElementById("resetNewPassword");
 
     /* ---------- UI ---------- */
 
@@ -877,31 +886,55 @@ document.addEventListener("DOMContentLoaded", () => {
         locked = false;
     });
 
+    /* ---------- OPEN RESET MODAL ---------- */
+
+    forgotBtn?.addEventListener("click", () => {
+        resetModal.style.display = "block";
+        resetEmail.value = authEmail.value;
+    });
+
+    /* ---------- CLOSE RESET MODAL ---------- */
+
+    resetCancelBtn?.addEventListener("click", () => {
+        resetModal.style.display = "none";
+        resetStatus.textContent = "";
+    });
+
     /* ---------- RESET PASSWORD ---------- */
 
-    forgotBtn?.addEventListener("click", async () => {
+    resetConfirmBtn?.addEventListener("click", async () => {
 
-        const email = prompt("Enter your email");
-        const newPass = prompt("Enter new password");
+        const email = resetEmail.value.trim();
+        const newPassword = resetNewPassword.value.trim();
 
-        if (!email || !newPass) return;
+        if (!email || !newPassword) {
+            resetStatus.textContent = "Fill all fields";
+            return;
+        }
+
+        resetStatus.textContent = "Updating...";
 
         try {
             const res = await fetch(`${API}/reset-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, newPassword: newPass })
+                body: JSON.stringify({ email, newPassword })
             });
 
             if (!res.ok) throw new Error();
-            alert("Password updated! Now login.");
+
+            resetStatus.textContent = "Password updated!";
+            setTimeout(() => {
+                resetModal.style.display = "none";
+                resetStatus.textContent = "";
+            }, 1200);
+
         } catch {
-            alert("Error resetting password");
+            resetStatus.textContent = "Error updating password";
         }
     });
 
 });
-
 
 /* =====================================================
    POLICY MODAL — FULL LEGAL CONTENT (LA MIA ROSA)
