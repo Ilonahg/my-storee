@@ -5052,3 +5052,20 @@ body[data-page="checkout"] {
   font-size: 13px;
   text-align: center;
 }
+/* =========================================
+   AUTH OVERLAY SCROLL FIX
+   Allows modal to fit on small screens
+========================================= */
+
+.auth-overlay {
+  overflow-y: auto;        /* дозволяє скрол */
+  padding: 40px 16px;      /* відступ зверху/знизу */
+  align-items: flex-start; /* не по центру, а зверху */
+}
+
+/* щоб картка не прилипала до краю */
+.auth-box {
+  margin: auto;            /* центрує по горизонталі */
+  margin-top: 60px;        /* відступ зверху */
+  margin-bottom: 60px;     /* відступ знизу */
+}
