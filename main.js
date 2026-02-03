@@ -764,7 +764,7 @@ function updateCartCount() {
    AUTH OVERLAY — SHOPIFY FINAL (SINGLE SOURCE)
 ===================================================== */
 
-(function initAuth() {
+document.addEventListener("DOMContentLoaded", () => {
 
     const authOverlay = document.getElementById("authOverlay");
     const openAuth = document.getElementById("openAuth");
@@ -781,8 +781,12 @@ function updateCartCount() {
     const codeBtn = document.getElementById("emailCodeSubmit");
     const codeMsg = document.getElementById("emailCodeMessage");
 
-    if (!authOverlay || !openAuth || !authSubmit) return;
+    if (!authSubmit) {
+      console.warn("authSubmit not found");
+      return;
+    }
 
+    if (!authOverlay || !openAuth) return;
 
     let locked = false;
 
@@ -842,6 +846,7 @@ function updateCartCount() {
     /* ---------- SEND CODE ---------- */
 
     authSubmit.addEventListener("click", async () => {
+      console.log("CLICK WORKS");
         if (locked) return;
 
         const email = authEmail.value.trim();
@@ -906,126 +911,156 @@ function updateCartCount() {
         locked = false;
     });
 
-})();
-
+});
 
 /* =====================================================
    POLICY MODAL — FULL LEGAL CONTENT (LA MIA ROSA)
-===================================================== */
-(function initPolicyModal() {
-
-const policyModal  = document.getElementById("policyModal");
-const policyTitle  = document.getElementById("policyTitle");
-const policyBody   = document.getElementById("policyBody");
-const policyClose  = document.getElementById("policyClose");
-
-if (!policyModal || !policyTitle || !policyBody) return;
-
-/* =====================================================
-   POLICY CONTENT
+   Professional / Safe / No Shopify Mentions
 ===================================================== */
 
-const policies = {
+document.addEventListener("DOMContentLoaded", () => {
 
-    privacy: {
-        title: "Privacy Policy",
-        body: `
-            <p><strong>Last Update:</strong> November 10, 2025</p>
-            <p>La Mia Rosa operates this website and store to provide customers with a secure and personalized shopping experience.</p>
-            <h3>Personal Information We Collect</h3>
-            <p>We may collect your name, address, email, phone number, payment details, account data, transaction history, communications, device data, and usage information.</p>
-            <h3>How We Use Your Information</h3>
-            <p>Your information is used to process orders, deliver products, provide support, improve services, prevent fraud, send updates, and comply with legal requirements.</p>
-            <h3>Sharing Information</h3>
-            <p>We may share data with payment processors, shipping companies, service providers, and legal authorities where required.</p>
-            <h3>Your Rights</h3>
-            <p>You may request access, correction, deletion, or transfer of your personal data by contacting us at <strong>info.lamiarosa@gmail.com</strong>.</p>
-            <h3>Security</h3>
-            <p>We implement appropriate security measures but cannot guarantee absolute protection of transmitted data.</p>
-        `
-    },
+    const policyModal  = document.getElementById("policyModal");
+    const policyTitle  = document.getElementById("policyTitle");
+    const policyBody   = document.getElementById("policyBody");
+    const policyClose  = document.getElementById("policyClose");
 
-    refund: {
-        title: "Money-back Policy",
-        body: `
-            <p>Our return policy lasts <strong>7 days</strong>. After this period, we cannot offer a refund or exchange.</p>
-            <p>Items must be unused, in original condition, and in original packaging. Proof of purchase is required.</p>
-            <h3>Non-returnable Items</h3>
-            <ul>
-                <li>Gift cards</li>
-                <li>Downloadable software</li>
-                <li>Health and personal care items</li>
-            </ul>
-            <h3>Refunds</h3>
-            <p>After inspection, approved refunds are processed to the original payment method.</p>
-            <p>For issues, contact <strong>info.lamiarosa@gmail.com</strong>.</p>
-        `
-    },
-
-    shipping: {
-        title: "Shipping Policy",
-        body: `
-            <p>Delivery is available within <strong>Turkey</strong> only.</p>
-            <p>Orders are delivered within <strong>5–7 business days</strong> excluding weekends and public holidays.</p>
-            <p>The seller is responsible for the order until delivery is completed.</p>
-            <p>Customers must report damage within 3 days of delivery.</p>
-        `
-    },
-
-    terms: {
-        title: "Terms of Service",
-        body: `
-            <p>By using the La Mia Rosa website, you agree to comply with all applicable laws.</p>
-            <p>Orders are subject to product availability. We reserve the right to modify products, prices, and policies.</p>
-            <p>Unauthorized use of this website may result in legal action.</p>
-        `
-    },
-
-    contact: {
-        title: "Contact Information",
-        body: `
-            <p><strong>Company:</strong> La Mia Rosa</p>
-            <p><strong>Address:</strong> Yenimahalle / Ankara</p>
-            <p><strong>Working hours:</strong> Monday–Friday 09:00–17:00</p>
-            <p><strong>Email:</strong> info.lamiarosa@gmail.com</p>
-        `
-    },
-
-    legal: {
-        title: "Legal Notice",
-        body: `
-            <p>La Mia Rosa processes personal data in accordance with Turkish Law No. 6698.</p>
-            <p>Customer data is used only for order processing and service improvement.</p>
-            <p>We do not sell personal data.</p>
-        `
+    if (!policyModal || !policyTitle || !policyBody) {
+        console.warn("Policy modal not found in HTML");
+        return;
     }
-};
 
-/* OPEN */
-window.openPolicy = function (key) {
-    const policy = policies[key];
-    if (!policy) return;
-    policyTitle.textContent = policy.title;
-    policyBody.innerHTML = policy.body;
-    policyModal.classList.add("active");
-    document.body.style.overflow = "hidden";
-};
+    /* =====================================================
+       POLICY CONTENT
+    ===================================================== */
 
-/* CLOSE */
-function closePolicy() {
-    policyModal.classList.remove("active");
-    document.body.style.overflow = "";
-}
+    const policies = {
 
-policyClose?.addEventListener("click", closePolicy);
-policyModal.addEventListener("click", e => {
-    if (e.target === policyModal) closePolicy();
+        privacy: {
+            title: "Privacy Policy",
+            body: `
+                <p><strong>Last Update:</strong> November 10, 2025</p>
+
+                <p>La Mia Rosa operates this website and store to provide customers with a secure and personalized shopping experience.</p>
+
+                <h3>Personal Information We Collect</h3>
+                <p>We may collect your name, address, email, phone number, payment details, account data, transaction history, communications, device data, and usage information.</p>
+
+                <h3>How We Use Your Information</h3>
+                <p>Your information is used to process orders, deliver products, provide support, improve services, prevent fraud, send updates, and comply with legal requirements.</p>
+
+                <h3>Sharing Information</h3>
+                <p>We may share data with payment processors, shipping companies, service providers, and legal authorities where required.</p>
+
+                <h3>Your Rights</h3>
+                <p>You may request access, correction, deletion, or transfer of your personal data by contacting us at <strong>info.lamiarosa@gmail.com</strong>.</p>
+
+                <h3>Security</h3>
+                <p>We implement appropriate security measures but cannot guarantee absolute protection of transmitted data.</p>
+            `
+        },
+
+        refund: {
+            title: "Money-back Policy",
+            body: `
+                <p>Our return policy lasts <strong>7 days</strong>. After this period, we cannot offer a refund or exchange.</p>
+
+                <p>Items must be unused, in original condition, and in original packaging. Proof of purchase is required.</p>
+
+                <h3>Non-returnable Items</h3>
+                <ul>
+                    <li>Gift cards</li>
+                    <li>Downloadable software</li>
+                    <li>Health and personal care items</li>
+                </ul>
+
+                <h3>Refunds</h3>
+                <p>After inspection, approved refunds are processed to the original payment method.</p>
+
+                <p>For issues, contact <strong>info.lamiarosa@gmail.com</strong>.</p>
+            `
+        },
+
+        shipping: {
+            title: "Shipping Policy",
+            body: `
+                <p>Delivery is available within <strong>Turkey</strong> only.</p>
+
+                <p>Orders are delivered within <strong>5–7 business days</strong> excluding weekends and public holidays.</p>
+
+                <p>The seller is responsible for the order until delivery is completed.</p>
+
+                <p>Customers must report damage within 3 days of delivery.</p>
+            `
+        },
+
+        terms: {
+            title: "Terms of Service",
+            body: `
+                <p>By using the La Mia Rosa website, you agree to comply with all applicable laws.</p>
+
+                <p>Orders are subject to product availability. We reserve the right to modify products, prices, and policies.</p>
+
+                <p>Unauthorized use of this website may result in legal action.</p>
+            `
+        },
+
+        contact: {
+            title: "Contact Information",
+            body: `
+                <p><strong>Company:</strong> La Mia Rosa</p>
+                <p><strong>Address:</strong> Yenimahalle / Ankara</p>
+                <p><strong>Working hours:</strong> Monday–Friday 09:00–17:00</p>
+                <p><strong>Email:</strong> info.lamiarosa@gmail.com</p>
+            `
+        },
+
+        legal: {
+            title: "Legal Notice",
+            body: `
+                <p>La Mia Rosa processes personal data in accordance with Turkish Law No. 6698.</p>
+
+                <p>Customer data is used only for order processing and service improvement.</p>
+
+                <p>We do not sell personal data.</p>
+            `
+        }
+    };
+
+    /* =====================================================
+       OPEN
+    ===================================================== */
+
+    window.openPolicy = function (key) {
+        const policy = policies[key];
+        if (!policy) return;
+
+        policyTitle.textContent = policy.title;
+        policyBody.innerHTML = policy.body;
+        policyModal.classList.add("active");
+        document.body.style.overflow = "hidden"; // 🔒 stop background scroll
+    };
+
+    /* =====================================================
+       CLOSE
+    ===================================================== */
+
+    function closePolicy() {
+        policyModal.classList.remove("active");
+        document.body.style.overflow = "";
+    }
+
+    policyClose?.addEventListener("click", closePolicy);
+
+    policyModal.addEventListener("click", (e) => {
+        if (e.target === policyModal) closePolicy();
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closePolicy();
+    });
+
 });
-document.addEventListener("keydown", e => {
-    if (e.key === "Escape") closePolicy();
-});
-
-})();
 
 /* ========================================================= */
 /* ACCOUNT — SINGLE CLEAN BLOCK */
