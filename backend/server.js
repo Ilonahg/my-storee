@@ -120,7 +120,7 @@ app.post("/send-code", async (req, res) => {
         );
 
         await resend.emails.send({
-            from: "La Mia Rosa <noreply@resend.dev>",
+            from: "La Mia Rosa <login@send.lamiarosa.store>",
             to: email,
             subject: "Your login code",
             html: `<h2>Your login code: ${code}</h2>`
