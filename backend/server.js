@@ -99,7 +99,7 @@ app.get("/", (req, res) => {
 });
 
 /* =====================================================
-   SEND EMAIL CODE (RESEND API — WORKS ON RENDER)
+   SEND EMAIL CODE (FIXED — ONE CODE PER EMAIL)
 ===================================================== */
 app.post("/send-code", async (req, res) => {
     try {
@@ -109,9 +109,12 @@ app.post("/send-code", async (req, res) => {
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const expiresAt = Date.now() + 5 * 60 * 1000;
 
-        await db.query("DELETE FROM login_codes WHERE email = ?", [email]);
         await db.query(
-            "INSERT INTO login_codes (email, code, expires_at) VALUES (?, ?, ?)",
+            `INSERT INTO login_codes (email, code, expires_at)
+             VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                code = VALUES(code),
+                expires_at = VALUES(expires_at)`,
             [email, code, expiresAt]
         );
 
@@ -124,7 +127,7 @@ app.post("/send-code", async (req, res) => {
 
         res.json({ ok: true });
     } catch (err) {
-        console.error(err);
+        console.error("SEND CODE ERROR:", err);
         res.status(500).json({ error: "Mail error" });
     }
 });
