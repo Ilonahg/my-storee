@@ -761,7 +761,7 @@ function updateCartCount() {
 }
 
 /* =====================================================
-   AUTH OVERLAY — EMAIL + PASSWORD LOGIN + RESET MODAL
+   AUTH OVERLAY — EMAIL + PASSWORD LOGIN + RESET
 ===================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -773,33 +773,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const authEmail = document.getElementById("authEmail");
     const authSubmit = document.getElementById("authSubmit");
     const authMessage = document.getElementById("authMessage");
-    const forgotBtn = document.getElementById("forgotPasswordBtn");
 
     if (!authOverlay || !openAuth || !authSubmit) return;
 
     let locked = false;
 
-    /* ---------- PASSWORD FIELD (create once) ---------- */
+    /* ---------- ADD PASSWORD FIELD ---------- */
 
-    let passwordInput = document.getElementById("authPassword");
+    const passwordInput = document.createElement("input");
+    passwordInput.type = "password";
+    passwordInput.placeholder = "Password";
+    passwordInput.className = "auth-input";
+    passwordInput.id = "authPassword";
+    authEmail.after(passwordInput);
 
-    if (!passwordInput) {
-        passwordInput = document.createElement("input");
-        passwordInput.type = "password";
-        passwordInput.placeholder = "Password";
-        passwordInput.className = "auth-input";
-        passwordInput.id = "authPassword";
-        authEmail.after(passwordInput);
-    }
+    /* ---------- ADD FORGOT PASSWORD BUTTON ---------- */
 
-    /* ---------- RESET MODAL ELEMENTS ---------- */
-
-    const resetModal = document.getElementById("resetModal");
-    const resetConfirmBtn = document.getElementById("resetConfirmBtn");
-    const resetCancelBtn = document.getElementById("resetCancelBtn");
-    const resetStatus = document.getElementById("resetStatus");
-    const resetEmail = document.getElementById("resetEmail");
-    const resetNewPassword = document.getElementById("resetNewPassword");
+    const forgotBtn = document.createElement("button");
+    forgotBtn.textContent = "Forgot password?";
+    forgotBtn.type = "button";
+    forgotBtn.className = "auth-link-btn";
+    passwordInput.after(forgotBtn);
 
     /* ---------- UI ---------- */
 
@@ -886,51 +880,25 @@ document.addEventListener("DOMContentLoaded", () => {
         locked = false;
     });
 
-    /* ---------- OPEN RESET MODAL ---------- */
-
-    forgotBtn?.addEventListener("click", () => {
-        resetModal.style.display = "block";
-        resetEmail.value = authEmail.value;
-    });
-
-    /* ---------- CLOSE RESET MODAL ---------- */
-
-    resetCancelBtn?.addEventListener("click", () => {
-        resetModal.style.display = "none";
-        resetStatus.textContent = "";
-    });
-
     /* ---------- RESET PASSWORD ---------- */
 
-    resetConfirmBtn?.addEventListener("click", async () => {
+    forgotBtn.addEventListener("click", async () => {
+        const email = prompt("Enter your email");
+        const newPass = prompt("Enter new password");
 
-        const email = resetEmail.value.trim();
-        const newPassword = resetNewPassword.value.trim();
-
-        if (!email || !newPassword) {
-            resetStatus.textContent = "Fill all fields";
-            return;
-        }
-
-        resetStatus.textContent = "Updating...";
+        if (!email || !newPass) return;
 
         try {
             const res = await fetch(`${API}/reset-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, newPassword })
+                body: JSON.stringify({ email, newPassword: newPass })
             });
 
             if (!res.ok) throw new Error();
-
-            resetStatus.textContent = "Password updated!";
-            setTimeout(() => {
-                resetModal.style.display = "none";
-                resetStatus.textContent = "";
-            }, 1200);
-
+            alert("Password updated! Now login.");
         } catch {
-            resetStatus.textContent = "Error updating password";
+            alert("Error resetting password");
         }
     });
 
