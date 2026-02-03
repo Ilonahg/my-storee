@@ -4988,4 +4988,27 @@ body[data-page="checkout"] {
   border: none;
   cursor: pointer;
 }
+/* ===============================
+   FORGOT PASSWORD BUTTON
+=============================== */
+
+.auth-link-btn {
+    margin-top: 14px;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.auth-link-btn:hover {
+    color: #000;
+}
+
+.auth-link-btn:active {
+    opacity: 0.6;
+}
  
