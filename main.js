@@ -845,7 +845,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     /* ---------- SEND CODE ---------- */
 
-    authSubmit.addEventListener("click", async () => {
+    authSubmit.addEventListener("click", async (e) => {
+      e.preventDefault(); // 🔥 ОЦЕ ВБИВАЄ SUBMIT ФОРМИ
       console.log("CLICK WORKS");
         if (locked) return;
 
