@@ -761,7 +761,7 @@ function updateCartCount() {
 }
 
 /* =====================================================
-   AUTH OVERLAY — SHOPIFY FINAL (SINGLE SOURCE)
+   AUTH OVERLAY — EMAIL + PASSWORD LOGIN
 ===================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -771,57 +771,42 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeAuth = document.getElementById("closeAuth");
 
     const authRegister = document.getElementById("authRegister");
-    const authCode = document.getElementById("authCode");
 
     const authEmail = document.getElementById("authEmail");
     const authSubmit = document.getElementById("authSubmit");
     const authMessage = document.getElementById("authMessage");
 
-    const codeInput = document.getElementById("emailCodeInput");
-    const codeBtn = document.getElementById("emailCodeSubmit");
-    const codeMsg = document.getElementById("emailCodeMessage");
-
-    if (!authSubmit) {
-      console.warn("authSubmit not found");
-      return;
-    }
-
-    if (!authOverlay || !openAuth) return;
+    if (!authOverlay || !openAuth || !authSubmit) return;
 
     let locked = false;
 
+    /* ---------- ADD PASSWORD FIELD DYNAMICALLY ---------- */
+
+    const passwordInput = document.createElement("input");
+    passwordInput.type = "password";
+    passwordInput.placeholder = "Password";
+    passwordInput.className = "auth-input";
+    passwordInput.id = "authPassword";
+    authEmail.after(passwordInput);
+
     /* ---------- UI ---------- */
-
-    function showEmail() {
-        authRegister.style.display = "block";
-        authCode.style.display = "none";
-    }
-
-    function showCode() {
-        authRegister.style.display = "none";
-        authCode.style.display = "block";
-    }
 
     function openOverlay() {
         authOverlay.classList.add("active");
-        showEmail();
     }
 
     function closeOverlay() {
         authOverlay.classList.remove("active");
         authMessage.textContent = "";
-        codeMsg.textContent = "";
         authEmail.value = "";
-        codeInput.value = "";
+        passwordInput.value = "";
     }
 
     /* ---------- AUTH CHECK ---------- */
 
     async function isLoggedIn() {
         try {
-            const res = await fetch(`${API}/me`, {
-                credentials: "include"
-            });
+            const res = await fetch(`${API}/me`, { credentials: "include" });
             const data = await res.json();
             return !!data.user;
         } catch {
@@ -843,72 +828,49 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === "Escape") closeOverlay();
     });
 
-    /* ---------- SEND CODE ---------- */
+    /* ---------- LOGIN / REGISTER ---------- */
 
     authSubmit.addEventListener("click", async (e) => {
-      e.preventDefault(); // 🔥 ОЦЕ ВБИВАЄ SUBMIT ФОРМИ
-      console.log("CLICK WORKS");
+        e.preventDefault();
         if (locked) return;
 
-        const email = authEmail?.value?.trim();
-
-        if (!email) {
-            authMessage.textContent = "Enter email";
-            locked = false;
-            return;
-        }
-
-        locked = true;
-        authMessage.textContent = "Sending code...";
-
-        try {
-            const res = await fetch(`${API}/send-code`, {
-
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include", // ✅ FIX
-                body: JSON.stringify({ email })
-            });
-
-            if (!res.ok) throw new Error();
-            showCode();
-            authMessage.textContent = "";
-        } catch {
-            authMessage.textContent = "Failed to send code";
-        }
-
-        locked = false;
-    });
-
-    /* ---------- VERIFY CODE ---------- */
-
-    codeBtn.addEventListener("click", async () => {
-        if (locked) return;
-
-        const code = codeInput.value.trim();
         const email = authEmail.value.trim();
+        const password = passwordInput.value.trim();
 
-        if (code.length !== 6) {
-            codeMsg.textContent = "Invalid code";
+        if (!email || !password) {
+            authMessage.textContent = "Enter email and password";
             return;
         }
 
         locked = true;
-        codeMsg.textContent = "Verifying...";
+        authMessage.textContent = "Logging in...";
 
         try {
-            const res = await fetch(`${API}/verify-code`, {
+            // СПЕРШУ ПРОБУЄМО LOGIN
+            let res = await fetch(`${API}/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 credentials: "include",
-                body: JSON.stringify({ email, code })
+                body: JSON.stringify({ email, password })
             });
 
+            // якщо не існує — реєструємо
+            if (!res.ok) {
+                res = await fetch(`${API}/register`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({ email, password })
+                });
+            }
+
             if (!res.ok) throw new Error();
+
             closeOverlay();
             location.href = "account.html";
+
         } catch {
-            codeMsg.textContent = "Wrong code";
+            authMessage.textContent = "Login failed";
         }
 
         locked = false;

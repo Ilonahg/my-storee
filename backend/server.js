@@ -1,4 +1,5 @@
 require("dotenv").config();
+const bcrypt = require("bcrypt");
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
@@ -44,6 +45,80 @@ app.use(cors({
     ],
     credentials: true
 }));
+
+/* =====================================================
+   REGISTER
+===================================================== */
+
+app.post("/register", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password required" });
+    }
+
+    const [existing] = await db.query("SELECT id FROM users WHERE email = ?", [email]);
+    if (existing.length) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
+
+    const [result] = await db.query(
+      "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+      [email, hash]
+    );
+
+    const token = jwt.sign({ userId: result.insertId, email }, JWT_SECRET, { expiresIn: "7d" });
+
+    res.cookie("auth_token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({ ok: true });
+
+  } catch (err) {
+    console.error("REGISTER ERROR", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+/* =====================================================
+   LOGIN
+===================================================== */
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const [users] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+    if (!users.length) {
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
+    const user = users[0];
+    const match = await bcrypt.compare(password, user.password_hash);
+
+    if (!match) {
+      return res.status(400).json({ error: "Invalid credentials" });
+    }
+
+    const token = jwt.sign({ userId: user.id, email }, JWT_SECRET, { expiresIn: "7d" });
+
+    res.cookie("auth_token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.json({ ok: true });
+
+  } catch (err) {
+    console.error("LOGIN ERROR", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 /* =====================================================
    MYSQL DATABASE
