@@ -849,9 +849,11 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log("CLICK WORKS");
         if (locked) return;
 
-        const email = authEmail.value.trim();
+        const email = authEmail?.value?.trim();
+
         if (!email) {
             authMessage.textContent = "Enter email";
+            locked = false;
             return;
         }
 
