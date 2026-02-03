@@ -4988,23 +4988,4 @@ body[data-page="checkout"] {
   border: none;
   cursor: pointer;
 }
-/* ===============================
-   RESET PASSWORD MODAL
-=============================== */
-
-.reset-modal {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  padding: 30px 20px;
-  background: white;
-  z-index: 50;
-}
-
-.reset-modal-content h3 {
-  text-align: center;
-  margin-bottom: 15px;
-  font-weight: 500;
-}
-
+ 
