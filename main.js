@@ -764,7 +764,7 @@ function updateCartCount() {
    AUTH OVERLAY — SHOPIFY FINAL (SINGLE SOURCE)
 ===================================================== */
 
-document.addEventListener("DOMContentLoaded", () => {
+(function initAuth() {
 
     const authOverlay = document.getElementById("authOverlay");
     const openAuth = document.getElementById("openAuth");
@@ -905,7 +905,8 @@ document.addEventListener("DOMContentLoaded", () => {
         locked = false;
     });
 
-});
+})();
+
 
 /* =====================================================
    POLICY MODAL — FULL LEGAL CONTENT (LA MIA ROSA)
