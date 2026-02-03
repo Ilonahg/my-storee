@@ -392,53 +392,114 @@
 
 
 <!-- =====================================================
-     AUTH OVERLAY — LOGIN + PASSWORD + RESET
+     AUTH OVERLAY — EMAIL LOGIN (SHOPIFY STYLE)
 ===================================================== -->
 <div class="auth-overlay" id="authOverlay">
 
-  <button class="auth-close" id="closeAuth">✕</button>
+    <button class="auth-close" id="closeAuth">✕</button>
 
-  <div class="auth-box">
+    <div class="auth-box">
 
-    <div class="auth-section">
-      <h2 class="auth-title">My Account</h2>
-      <p class="auth-subtitle">Log in or create an account</p>
+        <!-- ===== HEADER ===== -->
+        <div class="auth-section auth-login">
+            <h2 class="auth-title">Mağazam</h2>
+            <h3 class="auth-heading">Log in</h3>
+            <p class="auth-subtitle">
+                Log in or create an account with your email.
+            </p>
+        </div>
+
+        <div class="auth-divider">
+            <span>or</span>
+        </div>
+
+        <!-- ===== EMAIL INPUT ===== -->
+        <div class="auth-section auth-register" id="authRegister">
+            <h3 class="auth-heading">Continue with email</h3>
+
+            <input
+                type="email"
+                id="authEmail"
+                class="auth-input"
+                placeholder="Email"
+                autocomplete="email"
+            >
+
+            <button
+                class="auth-continue"
+                id="authSubmit"
+                type="button"
+            >
+                Continue
+            </button>
+            <button type="button" id="forgotPasswordBtn" class="auth-link-btn">
+              Forgot password?
+            </button>
+
+            <p class="auth-message" id="authMessage"></p>
+        </div>
+
+        <!-- ===== EMAIL CODE ===== -->
+        <div
+            class="auth-section auth-code"
+            id="authCode"
+            style="display:none;"
+        >
+            <h3 class="auth-heading">Enter the code</h3>
+            <p class="auth-subtitle">
+                We sent a 6-digit code to your email.
+            </p>
+
+            <input
+                type="text"
+                id="emailCodeInput"
+                class="auth-input"
+                placeholder="6-digit code"
+                maxlength="6"
+                inputmode="numeric"
+            >
+
+            <button
+                class="auth-continue"
+                id="emailCodeSubmit"
+                type="button"
+            >
+                Verify
+            </button>
+
+            <p class="auth-message" id="emailCodeMessage"></p>
+        </div>
+
+        <!-- ===== ACCOUNT (LOGGED IN) ===== -->
+        <div
+            class="auth-section auth-account"
+            id="authAccount"
+            style="display:none;"
+        >
+            <h3 class="auth-heading">My account</h3>
+
+            <p class="auth-subtitle">
+                You are logged in as:
+            </p>
+
+            <p class="auth-account-email" id="accountEmail"></p>
+
+            <button
+                class="auth-continue auth-logout"
+                id="logoutBtn"
+                type="button"
+            >
+                Log out
+            </button>
+        </div>
+
+        <!-- ===== LINKS ===== -->
+        <div class="auth-links">
+            <a href="#">Privacy policy</a>
+            <a href="#">Terms of Service</a>
+        </div>
+
     </div>
-
-    <!-- EMAIL -->
-    <input type="email" id="authEmail" class="auth-input" placeholder="Email">
-
-    <!-- PASSWORD -->
-    <input type="password" id="authPassword" class="auth-input" placeholder="Password">
-
-    <!-- LOGIN BUTTON -->
-    <button id="authSubmit" class="auth-continue">Continue</button>
-
-    <!-- FORGOT PASSWORD -->
-    <button id="forgotPasswordBtn" class="auth-link-btn">Forgot password?</button>
-
-    <p id="authMessage" class="auth-message"></p>
-
-  </div>
-</div>
-
-<!-- =====================================================
-     RESET PASSWORD MODAL
-===================================================== -->
-<div id="resetModal" class="reset-modal">
-  <div class="reset-box">
-
-    <h3>Reset password</h3>
-
-    <input type="email" id="resetEmail" class="auth-input" placeholder="Email">
-    <input type="password" id="resetNewPassword" class="auth-input" placeholder="New password">
-
-    <button id="resetConfirmBtn" class="auth-continue">Update password</button>
-    <button id="resetCancelBtn" class="auth-cancel">Cancel</button>
-
-    <p id="resetStatus" class="auth-message"></p>
-
-  </div>
 </div>
 
 <!-- MAIN SCRIPT -->
