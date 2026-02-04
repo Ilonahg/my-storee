@@ -5116,3 +5116,26 @@ body[data-page="checkout"] {
 .swal2-container {
     z-index: 99999 !important;
 }
+/* ===== FIX: NAV ABOVE HERO ===== */
+
+.site-header {
+    position: relative;
+    z-index: 10000; /* вище будь-яких секцій */
+}
+
+.header__nav {
+    position: relative;
+    z-index: 10001;
+}
+
+.dropdown {
+    position: absolute;
+    z-index: 10002; /* саме меню ще вище */
+}
+
+/* hero опускаємо вниз по шарах */
+.hero,
+.hero::before,
+.hero::after {
+    z-index: 1 !important;
+}
