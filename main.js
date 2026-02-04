@@ -1209,6 +1209,22 @@ window.addEventListener("popstate", e => {
   }
 /* ================= ORDERS ================= */
 
+function formatDate(dateStr) {
+  if (!dateStr) return "—";
+
+  // MySQL → ISO fix
+  const iso = dateStr.replace(" ", "T");
+  const d = new Date(iso);
+
+  if (isNaN(d)) return "—";
+
+  return d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+}
+
 async function loadOrders() {
   const ordersView = document.getElementById("ordersView");
   if (!ordersView) return;
@@ -1234,6 +1250,9 @@ async function loadOrders() {
       `;
       return;
     }
+
+    /* 🔥 NEWEST FIRST */
+    orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     orders.forEach(order => {
 
@@ -1266,7 +1285,7 @@ async function loadOrders() {
       el.innerHTML = `
         <div class="order-header">
           <strong>Order #${order.id}</strong>
-          <span>${new Date(order.createdAt).toLocaleDateString()}</span>
+          <span>${formatDate(order.createdAt)}</span>
         </div>
 
         <div class="order-items">
@@ -1286,7 +1305,6 @@ async function loadOrders() {
     console.error("LOAD ORDERS ERROR", err);
   }
 }
-
 
 /* ================= PROFILE ================= */
 
