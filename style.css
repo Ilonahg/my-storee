@@ -5026,14 +5026,15 @@ body[data-page="checkout"] {
 #forgotPasswordBtn:hover {
   color: #000;
 }
-/* ===================================
-   AUTH MODAL — DESKTOP VH FIX
-=================================== */
+ 
+/* ===============================
+   AUTH OVERLAY — TRUE CENTER FIX
+=============================== */
 
 .auth-overlay {
-  min-height: 100dvh;   /* нові viewport одиниці */
-}
-
-.auth-box {
-  max-height: calc(100dvh - 80px);
+  position: fixed;       /* ❗ вириваємо з потоку */
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
