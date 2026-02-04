@@ -14,20 +14,24 @@
 ===================================================== -->
 <header class="site-header header-reset" id="site-header">
 
-  <!-- BURGER -->
-  <button class="burger" id="burgerBtn">
-    <span></span>
-    <span></span>
-    <span></span>
-  </button>
+<div class="menu-overlay" id="menuOverlay"></div>
 
-  <!-- LOGO -->
-  <div class="header__logo">
-    <a href="index.html">
-      <span class="logo-line">La Mia</span>
-      <span class="logo-line">Rosa</span>
-    </a>
-  </div>
+
+
+<!-- MOBILE BURGER -->
+<button class="burger" id="burgerBtn" aria-label="Menu">
+  <span></span>
+  <span></span>
+  <span></span>
+</button>
+
+<!-- LOGO -->
+<div class="header__logo">
+  <a href="index.html" class="logo-wrap">
+    <span class="logo-line">La Mia</span>
+    <span class="logo-line">Rosa</span>
+  </a>
+</div>
 
   <!-- NAVIGATION -->
   <nav class="header__nav">
@@ -117,8 +121,7 @@
 
   </div>
 </header>
-<div class="menu-overlay" id="menuOverlay"></div>
-
+ 
 <!-- =====================================================
      SEARCH OVERLAY (REQUIRED FOR JS)
 ===================================================== -->
@@ -213,7 +216,7 @@
 
 </footer>
 <!-- =====================================================
-     AUTH OVERLAY — EMAIL LOGIN (SHOPIFY STYLE)
+     AUTH OVERLAY — CLEAN LOGIN SYSTEM
 ===================================================== -->
 <div class="auth-overlay" id="authOverlay">
 
@@ -234,7 +237,7 @@
             <span>or</span>
         </div>
 
-        <!-- ===== EMAIL INPUT ===== -->
+        <!-- ===== EMAIL + PASSWORD ===== -->
         <div class="auth-section auth-register" id="authRegister">
             <h3 class="auth-heading">Continue with email</h3>
 
@@ -246,6 +249,14 @@
                 autocomplete="email"
             >
 
+            <input
+                type="password"
+                id="authPassword"
+                class="auth-input"
+                placeholder="Password"
+                autocomplete="current-password"
+            >
+
             <button
                 class="auth-continue"
                 id="authSubmit"
@@ -254,10 +265,18 @@
                 Continue
             </button>
 
+            <button
+                type="button"
+                id="forgotPasswordBtn"
+                class="auth-link-btn"
+            >
+                Forgot password?
+            </button>
+
             <p class="auth-message" id="authMessage"></p>
         </div>
 
-        <!-- ===== EMAIL CODE ===== -->
+        <!-- ===== EMAIL CODE (OPTIONAL FUTURE) ===== -->
         <div
             class="auth-section auth-code"
             id="authCode"
@@ -319,7 +338,7 @@
 
     </div>
 </div>
-
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script src="main.js"></script>
 <!-- =====================================================

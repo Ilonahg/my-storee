@@ -761,23 +761,33 @@ function updateCartCount() {
 }
 
 /* =====================================================
-   AUTH OVERLAY — EMAIL + PASSWORD LOGIN + RESET
+   AUTH OVERLAY — LOGIN + REGISTER + RESET (LUX ALERTS)
+   Replaces ugly alert() & prompt() with SweetAlert UI
 ===================================================== */
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    const authOverlay = document.getElementById("authOverlay");
-    const openAuth = document.getElementById("openAuth");
-    const closeAuth = document.getElementById("closeAuth");
+    const authOverlay   = document.getElementById("authOverlay");
+    const openAuth      = document.getElementById("openAuth");
+    const closeAuth     = document.getElementById("closeAuth");
 
-    const authEmail = document.getElementById("authEmail");
-    const passwordInput = document.getElementById("authPassword"); // ✅ тепер з HTML
-    const authSubmit = document.getElementById("authSubmit");
-    const authMessage = document.getElementById("authMessage");
+    const authEmail     = document.getElementById("authEmail");
+    const passwordInput = document.getElementById("authPassword");
+    const authSubmit    = document.getElementById("authSubmit");
 
     if (!authOverlay || !openAuth || !authSubmit) return;
 
     let locked = false;
+
+    /* ---------- SWEETALERT THEME ---------- */
+
+    const luxAlert = Swal.mixin({
+        background: "#ffffff",
+        color: "#111",
+        confirmButtonColor: "#000",
+        cancelButtonColor: "#bbb",
+        buttonsStyling: true
+    });
 
     /* ---------- UI ---------- */
 
@@ -787,7 +797,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function closeOverlay() {
         authOverlay.classList.remove("active");
-        authMessage.textContent = "";
         authEmail.value = "";
         passwordInput.value = "";
     }
@@ -813,14 +822,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     closeAuth?.addEventListener("click", closeOverlay);
-
-    document.addEventListener("keydown", e => {
-        if (e.key === "Escape") closeOverlay();
-    });
+    document.addEventListener("keydown", e => e.key === "Escape" && closeOverlay());
 
     /* ---------- LOGIN / REGISTER ---------- */
 
     authSubmit.addEventListener("click", async (e) => {
+
         e.preventDefault();
         if (locked) return;
 
@@ -828,14 +835,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const password = passwordInput.value.trim();
 
         if (!email || !password) {
-            authMessage.textContent = "Enter email and password";
+            luxAlert.fire({
+                icon: "warning",
+                title: "Missing fields",
+                text: "Enter email and password"
+            });
             return;
         }
 
         locked = true;
-        authMessage.textContent = "Logging in...";
 
         try {
+
             let res = await fetch(`${API}/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -854,11 +865,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!res.ok) throw new Error();
 
+            await luxAlert.fire({
+                icon: "success",
+                title: "Welcome",
+                text: "Login successful"
+            });
+
             closeOverlay();
             location.href = "account.html";
 
         } catch {
-            authMessage.textContent = "Login failed";
+
+            luxAlert.fire({
+                icon: "error",
+                title: "Login failed",
+                text: "Check your credentials"
+            });
+
         }
 
         locked = false;
@@ -869,10 +892,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const forgotBtn = document.getElementById("forgotPasswordBtn");
 
     forgotBtn?.addEventListener("click", async () => {
-        const email = prompt("Enter your email");
-        const newPass = prompt("Enter new password");
 
-        if (!email || !newPass) return;
+        const { value: email } = await luxAlert.fire({
+            title: "Password recovery",
+            input: "email",
+            inputLabel: "Enter your email",
+            inputPlaceholder: "name@email.com",
+            showCancelButton: true,
+            confirmButtonText: "Continue"
+        });
+
+        if (!email) return;
+
+        const { value: newPass } = await luxAlert.fire({
+            title: "New password",
+            input: "password",
+            inputLabel: "Enter new password",
+            showCancelButton: true,
+            confirmButtonText: "Update"
+        });
+
+        if (!newPass) return;
 
         try {
             const res = await fetch(`${API}/reset-password`, {
@@ -882,13 +922,26 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             if (!res.ok) throw new Error();
-            alert("Password updated! Now login.");
+
+            luxAlert.fire({
+                icon: "success",
+                title: "Password updated",
+                text: "You can now log in"
+            });
+
         } catch {
-            alert("Error resetting password");
+
+            luxAlert.fire({
+                icon: "error",
+                title: "Reset failed",
+                text: "Try again later"
+            });
+
         }
     });
 
 });
+
 
 /* =====================================================
    POLICY MODAL — FULL LEGAL CONTENT (LA MIA ROSA)
@@ -1520,6 +1573,63 @@ document.addEventListener("DOMContentLoaded", () => {
       addBtn.textContent = "Add to cart";
       addBtn.disabled = false;
     }, 2000);
+  });
+});
+/* =====================================================
+   BUY NOW — DIRECT CHECKOUT (SMART)
+   Adds product to cart instantly then goes to checkout
+===================================================== */
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.body.dataset.page !== "product") return;
+
+  const buyBtn = document.querySelector(".btn-buy");
+  if (!buyBtn) return;
+
+  buyBtn.addEventListener("click", () => {
+
+    const params = new URLSearchParams(window.location.search);
+    const productKey = params.get("product");
+    const product = products[productKey];
+    if (!product) return;
+
+    const title = product.title;
+    const price = parseFloat(product.newPrice.replace("TL", "").replace(",", "").trim());
+    const qty = Number(document.getElementById("qtyValue")?.textContent || 1);
+
+    const mainImageEl = document.querySelector(".product-main-image");
+    let image = mainImageEl ? mainImageEl.getAttribute("src") : product.images[0];
+
+    let color = null;
+    const colorOption = document.getElementById("colorOption");
+    if (colorOption && colorOption.style.display !== "none") {
+      const activeColor = document.querySelector(".color-swatch.is-active");
+      if (activeColor) color = activeColor.dataset.color;
+    }
+
+    let size = null;
+    const activeSize = document.querySelector(".size-btn.is-active");
+    if (activeSize) size = activeSize.dataset.size;
+
+    let cart = JSON.parse(localStorage.getItem("shopify_cart")) || [];
+
+    const existingItem = cart.find(item =>
+      item.productKey === productKey &&
+      item.color === color &&
+      item.size === size
+    );
+
+    if (existingItem) {
+      existingItem.qty += qty;
+    } else {
+      cart.push({ productKey, title, price, qty, image, color, size });
+    }
+
+    localStorage.setItem("shopify_cart", JSON.stringify(cart));
+    updateCartCount();
+
+    // 🚀 INSTANT REDIRECT
+    window.location.href = "checkout.html";
   });
 });
 

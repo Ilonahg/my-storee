@@ -4988,4 +4988,131 @@ body[data-page="checkout"] {
   border: none;
   cursor: pointer;
 }
- 
+/* =====================================================
+   AUTH MODAL — RESPONSIVE HEIGHT FIX
+===================================================== */
+
+.auth-overlay {
+    overflow-y: auto;              /* дозволяє скрол якщо треба */
+    padding: 40px 16px;            /* щоб модалка не прилипала до країв */
+}
+
+.auth-box {
+    max-height: 90vh;              /* 🔥 головний фікс */
+    overflow-y: auto;              /* скрол тільки всередині */
+    scrollbar-width: thin;
+}
+/* =====================================================
+   AUTH LINK BUTTON (Forgot password)
+   Quiet, luxury, not loud
+===================================================== */
+
+.auth-link-btn {
+    margin-top: 14px;
+    background: none;
+    border: none;
+
+    font-size: 13px;
+    color: #666;
+    cursor: pointer;
+
+    align-self: center;
+    padding: 4px 8px;
+
+    transition: color .25s ease, opacity .25s ease;
+}
+
+.auth-link-btn:hover {
+    color: var(--rosa);
+    opacity: 0.85;
+}
+.auth-section {
+    margin-bottom: 10px;
+}
+
+.auth-input {
+    margin-bottom: 16px;
+}
+
+.auth-continue {
+    margin-top: 10px;
+}
+@media (max-width: 480px) {
+    .auth-box {
+        padding: 28px 20px;
+        border-radius: 10px;
+    }
+
+    .auth-title {
+        font-size: 22px;
+    }
+
+    .auth-heading {
+        font-size: 16px;
+    }
+}
+/* =====================================================
+   SWEETALERT — LUXURY SHOP STYLE
+===================================================== */
+
+.swal2-popup {
+    border-radius: 14px !important;
+    font-family: 'Inter', sans-serif;
+    padding: 28px 24px !important;
+}
+
+.swal2-title {
+    font-size: 20px !important;
+    font-weight: 500 !important;
+}
+
+.swal2-html-container {
+    font-size: 14px !important;
+    color: #555 !important;
+}
+
+/* Кнопка Confirm */
+.swal2-confirm {
+    background: #000 !important;
+    border-radius: 8px !important;
+    padding: 10px 22px !important;
+    font-size: 14px !important;
+    transition: transform .15s ease, opacity .15s ease !important;
+}
+
+.swal2-confirm:hover {
+    transform: translateY(-1px);
+    opacity: .9;
+}
+
+/* Кнопка Cancel */
+.swal2-cancel {
+    border-radius: 8px !important;
+    font-size: 14px !important;
+}
+
+/* Input поле */
+.swal2-input {
+    border-radius: 8px !important;
+    border: 1px solid #ddd !important;
+    font-size: 14px !important;
+}
+
+/* Іконки */
+.swal2-icon.swal2-success { border-color: #000 !important; color: #000 !important; }
+.swal2-icon.swal2-error   { border-color: #000 !important; color: #000 !important; }
+.swal2-icon.swal2-warning { border-color: #000 !important; color: #000 !important; }
+
+/* Анімація появи */
+.swal2-popup {
+    animation: fadeUp .25s ease;
+}
+
+@keyframes fadeUp {
+    from { transform: translateY(10px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+}
+/* SWEETALERT ABOVE ALL MODALS */
+.swal2-container {
+    z-index: 99999 !important;
+}

@@ -155,7 +155,7 @@
 </div>
 
 <!-- =====================================================
-     AUTH OVERLAY — EMAIL LOGIN (SHOPIFY STYLE)
+     AUTH OVERLAY — CLEAN LOGIN SYSTEM
 ===================================================== -->
 <div class="auth-overlay" id="authOverlay">
 
@@ -176,7 +176,7 @@
             <span>or</span>
         </div>
 
-        <!-- ===== EMAIL INPUT ===== -->
+        <!-- ===== EMAIL + PASSWORD ===== -->
         <div class="auth-section auth-register" id="authRegister">
             <h3 class="auth-heading">Continue with email</h3>
 
@@ -188,6 +188,14 @@
                 autocomplete="email"
             >
 
+            <input
+                type="password"
+                id="authPassword"
+                class="auth-input"
+                placeholder="Password"
+                autocomplete="current-password"
+            >
+
             <button
                 class="auth-continue"
                 id="authSubmit"
@@ -196,10 +204,18 @@
                 Continue
             </button>
 
+            <button
+                type="button"
+                id="forgotPasswordBtn"
+                class="auth-link-btn"
+            >
+                Forgot password?
+            </button>
+
             <p class="auth-message" id="authMessage"></p>
         </div>
 
-        <!-- ===== EMAIL CODE ===== -->
+        <!-- ===== EMAIL CODE (OPTIONAL FUTURE) ===== -->
         <div
             class="auth-section auth-code"
             id="authCode"
@@ -261,6 +277,7 @@
 
     </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!-- ================= PRODUCT PAGE ================= -->
 <main class="product-page">
