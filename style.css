@@ -5116,26 +5116,38 @@ body[data-page="checkout"] {
 .swal2-container {
     z-index: 99999 !important;
 }
-/* ===== FIX: NAV ABOVE HERO ===== */
+/* =====================================================
+   DESKTOP DROPDOWN FIX — SAFE FOR MOBILE
+   Працює тільки на десктопі
+===================================================== */
+@media (min-width: 769px) {
 
-.site-header {
-    position: relative;
-    z-index: 10000; /* вище будь-яких секцій */
-}
+  .nav-item { position: relative; }
 
-.header__nav {
-    position: relative;
-    z-index: 10001;
-}
-
-.dropdown {
+  .dropdown {
     position: absolute;
-    z-index: 10002; /* саме меню ще вище */
-}
+    top: calc(100% + 18px);
+    left: 0;
 
-/* hero опускаємо вниз по шарах */
-.hero,
-.hero::before,
-.hero::after {
-    z-index: 1 !important;
+    min-width: 200px;
+    padding: 18px 0;
+
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 8px;
+
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+
+    transition: opacity .35s ease, transform .35s ease;
+    z-index: 1000;
+  }
+
+  /* ⬇️ ЄДИНА логіка відкриття для desktop */
+  .nav-item.open > .dropdown {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
 }
